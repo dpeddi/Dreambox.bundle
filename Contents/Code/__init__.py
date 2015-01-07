@@ -33,7 +33,7 @@ def Start():
     DirectoryObject.thumb = R(ICON)
     #Save the inital channel to reset the box.
     try:
-        sRef, channel, provider, title, description, remaining = get_current_service(Prefs['host'], Prefs['port_web'])[0]
+        sRef, channel, provider, title, description, remaining = get_current_service(Prefs['host'], Prefs['port_web'],Prefs['username'],Prefs['password'])[0]
         Data.Save('sRef', sRef)
         Log('Loaded iniital channel from receiver')
         Data.SaveObject('Started', True)
@@ -113,7 +113,7 @@ def Display_Bouquets():
     Log('Entered Display Bouquets function')
 
     items = []
-    bouquets = get_bouquets(Prefs['host'],Prefs['port_web'])
+    bouquets = get_bouquets(Prefs['host'],Prefs['port_web'],Prefs['username'],Prefs['password'])
     for bouquet in bouquets:
             items.append(DirectoryObject(key = Callback(Display_Bouquet_Channels, sender = str(bouquet[7]), index=str(bouquet[6])),
                                     title = str(bouquet[7])))
@@ -167,7 +167,7 @@ def Display_Bouquet_Channels(sender='', index=None):
     from enigma2 import get_channels_from_service
 
     items = []
-    channels = get_channels_from_service(Prefs['host'], Prefs['port_web'], index, show_epg=True)
+    channels = get_channels_from_service(Prefs['host'], Prefs['port_web'],Prefs['username'],Prefs['password'], index, show_epg=True)
 
     name = sender
     Log(channels)
@@ -201,11 +201,11 @@ def Display_Audio_Events(sender, sRef, title=None, description=None, onnow=False
     items = []
     zapped = True
     if not onnow:
-        zapped = zap(Prefs['host'], Prefs['port_web'], sRef=sRef)
+        zapped = zap(Prefs['host'], Prefs['port_web'],Prefs['username'],Prefs['password'], sRef=sRef)
 
     if zapped:
         time.sleep(2)
-        for audio_id, audio_description, active in get_audio_tracks(Prefs['host'],Prefs['port_web']):
+        for audio_id, audio_description, active in get_audio_tracks(Prefs['host'],Prefs['port_web'],Prefs['username'],Prefs['password']):
             remaining = 0
             items.append(add_current_event(sRef=sRef, name=sender, description=description, title=title, remaining=0, audioid=audio_id, audio_description=audio_description))
 
@@ -227,7 +227,7 @@ def Display_Channel_Events(sender, sRef, title=None):
         if int(start) < time.time():
             result=None
             if Prefs['zap'] :#and Prefs['audio'] :
-                zapped = zap(Prefs['host'],Prefs['port_web'], sRef=sRef)
+                zapped = zap(Prefs['host'],Prefs['port_web'],Prefs['username'],Prefs['password'], sRef=sRef)
                 Log('Zapped is {}'.format(zapped[0]))
                 if zapped[0]:
                     result = check_and_display_audio(name=name, title=title, sRef=sRef, description=description, remaining=remaining)
@@ -260,7 +260,7 @@ def Display_Channel_Events(sender, sRef, title=None):
 def AddTimer(title='', name='', sRef='', eventid=0):
     from enigma2 import set_timer
 
-    result = set_timer(Prefs['host'], Prefs['port_web'], sRef, eventid)
+    result = set_timer(Prefs['host'], Prefs['port_web'],Prefs['username'],Prefs['password'], sRef, eventid)
     Log('add timer result {}'.format(result))
     items=[]
     items.append(DirectoryObject(key=Callback(Display_Channel_Events, sender=name, title=title, sRef=sRef),
@@ -275,7 +275,7 @@ def Display_Timer_Events(sender=None):
 
     Log('Entered display timer events: sender {} '.format(sender))
     items = []
-    for sRef, service_name, name, description, disabled, begin, end, duration in get_timers(Prefs['host'], Prefs['port_web'], active=True):
+    for sRef, service_name, name, description, disabled, begin, end, duration in get_timers(Prefs['host'], Prefs['port_web'], Prefs['username'], Prefs['password'], active=True):
         dt = datetime.datetime.fromtimestamp(int(begin)).strftime('%d %b %y %H:%M')
         items.append(DirectoryObject(key=Callback(ConfirmDeleteTimer, sRef=sRef, begin=begin, end=end, servicename=service_name, name=name, sender=sender),
                                    title='{} {} ( {} ) '.format(service_name, name, dt),
@@ -304,12 +304,12 @@ def DeleteTimer(sRef='', begin=0, end=0, servicename='', name='', oc=None):
     Log('Entered delete timer function sRef={} begin={} end={} sn={} name={}'.format(sRef, begin, end, servicename, name))
     from enigma2 import delete_timer, get_timers
 
-    result = delete_timer(Prefs['host'], Prefs['port_web'], sRef=sRef, begin=begin, end=end)
+    result = delete_timer(Prefs['host'], Prefs['port_web'], Prefs['username'], Prefs['password'], sRef=sRef, begin=begin, end=end)
     Log('delete timer result {}'.format(result))
     items=[]
     oc=ObjectContainer(no_cache=True, replace_parent=True)
     if result:
-        remaining_timers = get_timers(Prefs['host'], Prefs['port_web'], active=True)
+        remaining_timers = get_timers(Prefs['host'], Prefs['port_web'], Prefs['username'], Prefs['password'], active=True)
         if len(remaining_timers) == 0:
             oc.add(DirectoryObject(key=Callback(MainMenu),
                                      title='Timer event deleted for {}. Click to return to main menu.'.format(name)))
@@ -424,7 +424,7 @@ def PlayVideo(channel, filename=None, folder=None, recorded=None, audioid=None, 
 def ResetReceiver():
     Log('Entered ResetReceiver function')
     from enigma2 import zap
-    zap, error = zap(Prefs['host'], Prefs['port_web'], Data.Load('sRef'))
+    zap, error = zap(Prefs['host'], Prefs['port_web'],Prefs['username'],Prefs['password'], Data.Load('sRef'))
     Log(error)
     if zap:
         message = 'Zapped to channel to reset receiver'
@@ -479,7 +479,7 @@ def SetPowerState(state):
     title = ''
     title2 = ''
     try:
-        result, error = set_power_state(Prefs['host'], Prefs['port_web'], state=state)
+        result, error = set_power_state(Prefs['host'], Prefs['port_web'], Prefs['username'], Prefs['password'], state=state)
 
         if result and error == 0:
             title = 'Receiver in standby.'
@@ -581,12 +581,12 @@ def load_folders_from_receiver():
 def get_events(title=None, sRef=None):
     from enigma2 import get_nownext, get_fullepg, get_now
     if Prefs['fullepg']:
-        events = get_fullepg(Prefs['host'], Prefs['port_web'], sRef)
+        events = get_fullepg(Prefs['host'], Prefs['port_web'],Prefs['username'],Prefs['password'], sRef)
     else:
         if title and title != 'N/A':
-            events = get_nownext(Prefs['host'], Prefs['port_web'], sRef)
+            events = get_nownext(Prefs['host'], Prefs['port_web'],Prefs['username'],Prefs['password'], sRef)
         else:
-            events = get_now(Prefs['host'], Prefs['port_web'], sRef)
+            events = get_now(Prefs['host'], Prefs['port_web'],Prefs['username'],Prefs['password'], sRef)
             Log('Get now event {}'.format(events))
     return events
 
@@ -668,7 +668,7 @@ def add_tools():
 
 def on_now_menuitem():
     from enigma2 import get_current_service, get_number_of_audio_tracks, get_audio_tracks
-    sRef, channel, provider, title, description, remaining = get_current_service(Prefs['host'], Prefs['port_web'])[0]
+    sRef, channel, provider, title, description, remaining = get_current_service(Prefs['host'], Prefs['port_web'], Prefs['username'], Prefs['password'])[0]
     if Client.Platform in CLIENT:
         result = Display_Event(sender='On Now - {}   {}'.format(channel, title), channel=sRef, description=description, duration=int(remaining*1000))
     else:
@@ -694,7 +694,7 @@ def zapaudio( channel=None, audioid=None):
         zap = zap(Prefs['host'], Prefs['port_web'], channel)
         import time
         time.sleep(2)
-        audio = set_audio_track(Prefs['host'], Prefs['port_web'], audioid)
+        audio = set_audio_track(Prefs['host'], Prefs['port_web'], Prefs['username'], Prefs['password'], audioid)
         Log('Audio returned from enigma2 module {}'.format(audio))
         time.sleep(2)
         if audio:
@@ -713,7 +713,7 @@ def check_and_display_audio( name, title, sRef, description, remaining):
     time.sleep(2)
     result=None
     #TODO Fix the audio switching/ Put a large value here so it nevr displays them
-    if get_number_of_audio_tracks(Prefs['host'], Prefs['port_web']) > 10:
+    if get_number_of_audio_tracks(Prefs['host'], Prefs['port_web'], Prefs['username'], Prefs['password']) > 10:
         # send audio data here or get it
         Log('Found 2 audio tracks')
         result = DirectoryObject(key=Callback(Display_Audio_Events,
@@ -739,7 +739,7 @@ def check_and_display_audio( name, title, sRef, description, remaining):
 def timers(oc):
     from enigma2 import get_timers
 
-    timer = get_timers(Prefs['host'], Prefs['port_web'], active=True)
+    timer = get_timers(Prefs['host'], Prefs['port_web'], Prefs['username'], Prefs['password'], active=True)
     if len(timer) > 0:
         oc.add(DirectoryObject(key=Callback(Display_Timer_Events, sender='Active Timers'),
                                  title='Active timers'))
@@ -813,7 +813,7 @@ def zap_menuitem(items=None):
     Log('Entered zap_menuitem function items={}'.format(items))
     from enigma2 import get_number_of_tuners
 
-    if get_number_of_tuners(Prefs['host'], Prefs['port_web']) == 1:
+    if get_number_of_tuners(Prefs['host'], Prefs['port_web'], Prefs['username'], Prefs['password']) == 1:
         items.append(DirectoryObject(key=Callback(ResetReceiver),
                                title='Reset receiver to original channel',
                                thumb = None))
@@ -870,7 +870,7 @@ def get_folders():
 def add_movie_items(items=[]):
     from enigma2 import get_movies
     Log('Entering Add Movie Items')
-    movies = get_movies(Prefs['host'],Prefs['port_web'])
+    movies = get_movies(Prefs['host'],Prefs['port_web'],Prefs['username'],Prefs['password'])
     items = items
     for sref, title, description, channel, e2time, length, filename in movies:
         secs = length.split(':')

@@ -7,75 +7,75 @@ import os
 
 
 
-def get_bouquets(host, web):
+def get_bouquets(host, web, username, password):
 
     url = 'http://{}:{}/web/getservices'.format(host, web)
-    soup = get_data((url, None))
+    soup = get_data((username, password, url, None))
     results = get_service_name(soup)
     return results
 
 
-def get_current_service(host, web):
+def get_current_service(host, web, username, password):
 
     url = 'http://{}:{}/web/getcurrent'.format(host, web)
     try:
-        soup = get_data((url, None))
+        soup = get_data((username, password, url, None))
         results = get_current_service_info(soup)
     except:
         raise
     return results
 
-def get_channels_from_service(host, web, sRef, show_epg=False):
+def get_channels_from_service(host, web, username, password, sRef, show_epg=False):
 
     url = 'http://{}:{}/web/getservices'.format(host, web)
     data = {'sRef': sRef}
-    soup = get_data((url, data))
+    soup = get_data((username, password, url, data))
     results = get_service_name(soup, host, web, show_epg)
     return results
 
 
-def get_channels_from_epg(host, web, bRef):
+def get_channels_from_epg(host, web, username, password, bRef):
 
     url = 'http://{}:{}/web/epgbouquet'.format(host, web)
     data = {'bRef': bRef}
-    soup = get_data((url, data))
+    soup = get_data((username, password, url, data))
     results = get_events(soup)
     return results
 
 
-def get_fullepg(host, web, sRef):
+def get_fullepg(host, web, username, password, sRef):
 
     url = 'http://{}:{}/web/epgservice'.format(host, web)
     data = {'sRef': sRef}
-    soup = get_data((url, data))
+    soup = get_data((username, password, url, data))
     results = get_events(soup)
     return results
 
-def get_now(host, web, sRef):
+def get_now(host, web, username, password, sRef):
 
     url = 'http://{}:{}/web/epgservicenow'.format(host, web)
     data = {'sRef': sRef}
-    soup = get_data((url, data))
+    soup = get_data((username, password, url, data))
     results = get_events(soup)
     return results
 
 
-def get_nownext(host, web, sRef):
+def get_nownext(host, web, username, password, sRef):
 
     url = 'http://{}:{}/web/epgservicenow'.format(host, web)
     url2 = 'http://{}:{}/web/epgservicenext'.format(host, web)
     data = {'sRef': sRef}
-    soup = get_data((url, data), (url2, data))
+    soup = get_data((username, password, url, data), (url2, data))
     results = get_events(soup)
     return results
 
 
-def get_movies(host, web):
+def get_movies(host, web, username, password):
 
     movies = []
     url = 'http://{}:{}/web/movielist'.format(host, web)
     try:
-        soup = get_data((url, None))
+        soup = get_data((username, password, url, None))
         for elem in soup[0].findAll('e2movie'):
             sref, title, description, channel, e2time, length, filename = elem.findAll(['e2servicereference',
                                                                             'e2title',
@@ -102,14 +102,14 @@ def get_movies(host, web):
     return movies
 
 #TODO Returning the wrong result when eventid was incorrectly named. eventID
-def set_timer(host, web, sRef, eventID):
+def set_timer(host, web, username, password, sRef, eventID):
     #http://192.168.1.252/web/timeraddbyeventid?sRef=1:0:1:2077:7FA:2:11A0000:0:0:0:&eventid=674
     state = False
     error = ''
     try:
         url = 'http://{}:{}/web/timeraddbyeventid'.format(host, web)
         data = {'sRef': sRef, 'eventid': eventID}
-        soup = get_data((url, data))
+        soup = get_data((username, password, url, data))
         state = soup[0].e2state.string
         if state == 'True':
             state = True
@@ -118,14 +118,14 @@ def set_timer(host, web, sRef, eventID):
     return state, error
 
 
-def delete_timer(host, web, sRef=None, begin=0, end=0):
+def delete_timer(host, web, username, password, sRef=None, begin=0, end=0):
     #http://192.168.1.252/web/timerdelete?sRef=1:0:19:2710:801:2:11A0000:0:0:0:&begin=1388863020&end=1388868780
     state = False
     error = ''
     try:
         url = 'http://{}:{}/web/timerdelete'.format(host, web)
         data = {'sRef': sRef, 'begin': begin, 'end': end}
-        soup = get_data((url, data))
+        soup = get_data((username, password, url, data))
         state = soup[0].e2state.string
         if state == 'True':
             state = True
@@ -133,13 +133,13 @@ def delete_timer(host, web, sRef=None, begin=0, end=0):
         error = e.message
     return state, error
 
-def get_timers(host, web, active=False):
+def get_timers(host, web, username, password, active=False):
     #not using active yet
     import time
     timers = []
     url = 'http://{}:{}/web/timerlist'.format(host, web)
     try:
-        soup = get_data((url, None))
+        soup = get_data((username, password, url, None))
         soup = soup[0].findAll('e2timer')
         for elem in soup:
             sref, service_name, name, description, disabled, begin, end, duration = elem.findAll(['e2servicereference',
@@ -167,30 +167,30 @@ def get_timers(host, web, active=False):
 
 
 
-def get_number_of_tuners(host, web):
+def get_number_of_tuners(host, web, username, password):
     url = 'http://{}:{}/web/about'.format(host, web)
     try:
-        soup = get_data((url, None))
+        soup = get_data((username, password, url, None))
         number_of_tuners = len(soup[0].findAll('e2nim'))
     except:
         raise
     return number_of_tuners
 
-def get_number_of_audio_tracks(host, web):
+def get_number_of_audio_tracks(host, web, username, password):
     #TODO May not be getting audio correct after update to HTTPlib2
     url = 'http://{}:{}/web/getaudiotracks'.format(host, web)
     try:
-        soup = get_data((url, None))
+        soup = get_data((username, password, url, None))
         number_of_audio_tracks = len(soup[0].findAll('e2audiotrack'))
     except:
         raise
     return number_of_audio_tracks
 
-def get_audio_tracks(host, web):
+def get_audio_tracks(host, web, username, password):
     url = 'http://{}:{}/web/getaudiotracks'.format(host, web)
     audio_tracks = []
     try:
-        soup = get_data((url, None))
+        soup = get_data((username, password, url, None))
         soup = soup[0].findAll('e2audiotrack')
         for elem in soup:
             description, trackid, active = elem.findAll(['e2audiotrackdescription',
@@ -202,13 +202,13 @@ def get_audio_tracks(host, web):
         raise
     return audio_tracks
 
-def set_audio_track(host, web, trackid):
+def set_audio_track(host, web, username, password, trackid):
     result = False
     error = ''
     try:
         url = 'http://{}:{}/web/selectaudiotrack'.format(host, web)
         data = {'id': trackid}
-        soup = get_data((url, data))
+        soup = get_data((username, password, url, data))
         print soup
         state = soup[0].e2result.string
         print state
@@ -220,14 +220,14 @@ def set_audio_track(host, web, trackid):
 
 
 
-def zap(host, web, sRef):
+def zap(host, web, username, password, sRef):
 
     result = False
     error = ''
     try:
         url = 'http://{}:{}/web/zap'.format(host, web)
         data = {'sRef': sRef}
-        soup = get_data((url, data))
+        soup = get_data((username, password, url, data))
         state = soup[0].e2state.string
         if state == 'True':
             result = True
@@ -238,14 +238,14 @@ def zap(host, web, sRef):
 ##############################################################
 # Send a power signal to the box                             #
 ##############################################################
-def set_power_state(host=None, web=None, state=0):
+def set_power_state(host=None, web=None, username=None, Password=None, state=0):
     import socket
     result = False
     error = None
     try:
         url = 'http://{}:{}/web/powerstate'.format(host, web)
         data = {'newstate': state}
-        soup = get_data((url, data))
+        soup = get_data((username, password, url, data))
         if 'false' in soup[0].e2instandby.string:
             result = True
             error = 0
@@ -282,14 +282,14 @@ def set_power_state(host=None, web=None, state=0):
 ###############################################################
 # Extracts the service name from the soup                     #
 ###############################################################
-def get_service_name(soup_list, host=None, web=None, show_epg=False):
+def get_service_name(soup_list, host=None, web=None, username=None, password=None, show_epg=False):
     try:
         results = []
         for soup in soup_list:
             for elems in soup.findAll('e2service'):
                 sRef, name = elems.findAll(['e2servicereference', 'e2servicename'])
                 if show_epg:
-                    re =  get_now(host, web, format_string(sRef))
+                    re =  get_now(host, web, username, password, format_string(sRef))
                     if re[0] != 'Error':
                         results.append((re[0][0],
                                      re[0][1],
@@ -446,10 +446,14 @@ def get_data(*args):
     req = Http(timeout=10)
     results = []
     for item in args:
-        u = item[0]
-        data = item[1]
+        usern = item[0]
+        passw = item[1]
+        u = item[2]
+        data = item[3]
         print data
         try:
+            if usern:
+                req.add_credentials( usern, passw)
             if data:
                 headers = {'Content-type': 'application/x-www-form-urlencoded'}
                 resp, content = req.request(u, "POST", headers=headers, body=urlencode(data))

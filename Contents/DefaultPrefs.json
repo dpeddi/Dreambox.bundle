@@ -49,6 +49,18 @@
 		"default": "80"
 	},
 	{
+		"id": "username",
+		"type": "text",
+		"label": "Username",
+		"default": ""
+	},
+	{
+		"id": "password",
+		"type": "text",
+		"label": "Password",
+		"default": ""
+	},
+	{
 		"id": "port_video",
 		"type": "text",
 		"label": "Streaming Video Port",
